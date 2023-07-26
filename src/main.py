@@ -1,4 +1,7 @@
+import os
+import time
 import asyncio
+import pandas as pd
 from typing import TypedDict, Literal
 from playwright.async_api import async_playwright, Playwright, Browser, BrowserContext, Page
 
@@ -60,8 +63,10 @@ async def goto_city_results(city: str, page: Page, only_fill_city=False):
 
     if only_fill_city:
         await page.get_by_placeholder("Ciudad, Zona o Barrio").clear()
+        await page.wait_for_timeout(1000)
 
     await page.get_by_placeholder("Ciudad, Zona o Barrio").fill(city)
+    await page.wait_for_timeout(2000)
     await page.locator("id=react-autowhatever-location-section-0-item-0").click()
 
     await page.get_by_role("button", name="Buscar").click()
@@ -151,8 +156,10 @@ async def scrape_city_results(page: Page) -> list[PropertyResult]:
                 "modality": modality,
                 "neighborhood": neighborhood.lower(),
                 "city": city.lower(),
-                "price": price_tuple.split(": ")[1].replace("$", ""),  # goes in COP
-                "area": area_tuple.split(": ")[1].replace(" m²", ""),  # goes in m²
+                # goes in COP
+                "price": price_tuple.split(": ")[1].replace("$", "").replace(".", ""),
+                # goes in m²
+                "area": area_tuple.split(": ")[1].replace(" m²", ""),
                 "bathrooms": bathrooms_tuple.split(": ")[1],
             }
 
@@ -171,6 +178,37 @@ async def close_playwright(playwright: Playwright, browser: Browser, context: Br
     await context.close()
     await browser.close()
     await playwright.stop()
+
+
+def save_as_csv(rows: list[PropertyResult]):
+    """Saves the scraped rows as a csv with good format.
+
+    Args:
+        rows (list[PropertyResult]): scraped rows.
+    """
+    save_dir = "./output"
+    filename = f"{save_dir}/m2-{time.time()}.csv"
+    columns = [
+        "building",
+        "modality",
+        "neighborhood",
+        "city",
+        "price (COP)",
+        "area (m²)",
+        "bathrooms",
+    ]
+
+    df = pd.DataFrame(rows)
+    df[:] = df[:].astype(str)
+    df[["price", "area", "bathrooms"]] = df[["price", "area", "bathrooms"]].apply(pd.to_numeric)
+    df = df.convert_dtypes()
+    df.columns = columns
+
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    df.to_csv(filename, index=False, sep="|", encoding="utf8")
+    print(f"Saved results @ {os.path.abspath(filename)}")
 
 
 async def main():
@@ -200,9 +238,10 @@ async def main():
 
         rows.extend(city_rows)
 
-    print(f"Results from @ {url}: {len(rows)}")
-
     await close_playwright(playwright=playwright, browser=browser, context=context)
+
+    print(f"Results from @ {url}: {len(rows)}")
+    save_as_csv(rows)
 
 
 if __name__ == "__main__":
