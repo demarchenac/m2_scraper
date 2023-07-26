@@ -18,7 +18,7 @@ async def run_scraper(cities: list[str], url: str, is_headless=False):
 
     (playwright, browser, context, page) = await navigation.init_playwright(is_headless=is_headless)
 
-    print(f"Start scrapper @ {url}")
+    print(f"Start scraper @ {url}")
 
     for city in cities:
         city_rows: list[PropertyResult] = []
@@ -44,7 +44,7 @@ async def run_scraper(cities: list[str], url: str, is_headless=False):
 
 
 async def main():
-    """Runs the PlayWright web scrapper for https://metrocuadrado.com"""
+    """Runs the PlayWright web scraper for https://metrocuadrado.com"""
 
     url = "https://www.metrocuadrado.com/"
     cities = ["Barranquilla", "Soledad", "Puerto Colombia", "Galapa"]
