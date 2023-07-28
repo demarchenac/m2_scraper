@@ -23,14 +23,22 @@ async def run_scraper(cities: list[str], url: str, is_headless=False):
     for city in cities:
         city_rows: list[PropertyResult] = []
 
-        await page.goto(url)
-        await navigation.goto_city_results(city=city, page=page, only_fill_city=(city != cities[0]))
-        pages = await scrape.get_pages_of_city_results(page)
+        for result_type in ["sales", "rent"]:
+            await page.goto(url)
+            await navigation.goto_city_results(
+                city=city,
+                page=page,
+                only_fill_city=(city != cities[0]),
+                results_type=result_type,
+            )
 
-        for active_page in range(1, pages + 1):
-            await navigation.goto_page(page=page, pagination_page=active_page)
-            page_results = await scrape.get_city_results_of_current_page(page)
-            city_rows.extend(page_results)
+            pages = await scrape.get_pages_of_city_results(page)
+
+            for active_page in range(1, pages + 1):
+                await navigation.goto_page(page=page, pagination_page=active_page)
+                page_results = await scrape.get_city_results_of_current_page(page)
+
+                city_rows.extend(page_results)
 
         print(f"\t{city}, Results: {len(city_rows)}")
 

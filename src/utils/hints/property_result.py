@@ -14,4 +14,5 @@ class PropertyResult(TypedDict):
     city: str
     price: str
     area: str
+    rooms: str
     bathrooms: str

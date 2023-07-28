@@ -21,12 +21,20 @@ def to_csv(rows: list[PropertyResult]):
         "city",
         "price (COP)",
         "area (m²)",
+        "rooms",
         "bathrooms",
     ]
 
+    # pylint: disable-next=invalid-name
     df = pd.DataFrame(rows)
+
     df[:] = df[:].astype(str)
-    df[["price", "area", "bathrooms"]] = df[["price", "area", "bathrooms"]].apply(pd.to_numeric)
+
+    df[["price", "area", "rooms", "bathrooms"]] = df[["price", "area", "rooms", "bathrooms"]].apply(
+        pd.to_numeric
+    )
+
+    # pylint: disable-next=invalid-name
     df = df.convert_dtypes()
     df.columns = columns
 

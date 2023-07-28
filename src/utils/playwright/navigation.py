@@ -1,3 +1,4 @@
+from typing import Literal
 from playwright.async_api import async_playwright, Playwright, Browser, BrowserContext, Page
 
 
@@ -21,7 +22,9 @@ async def init_playwright(
     return (playwright, browser, context, page)
 
 
-async def goto_city_results(city: str, page: Page, only_fill_city=False):
+async def goto_city_results(
+    city: str, results_type: Literal["sales", "rent"], page: Page, only_fill_city=False
+):
     """Navigates to metrocuadrado results for a given city
 
     Args:
@@ -37,7 +40,15 @@ async def goto_city_results(city: str, page: Page, only_fill_city=False):
         await page.locator("id=propertyTypes").click()
 
         await page.locator("id=businessType").click()
-        await page.locator("id=react-select-3-option-2", has_text="Compra Nuevo y Usado").click()
+
+        if results_type == "sales":
+            await page.locator(
+                "id=react-select-3-option-2",
+                has_text="Compra Nuevo y Usado",
+            ).click()
+        elif results_type == "rent":
+            await page.locator("id=react-select-3-option-3", has_text="Arriendo").click()
+
         await page.locator("id=businessType").click()
 
     if only_fill_city:

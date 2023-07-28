@@ -51,13 +51,27 @@ async def get_city_results_of_current_page(page: Page) -> list[PropertyResult]:
             if "Baños" not in pretty:
                 pretty += " | Baños: 0"
 
-            (location, price_tuple, area_tuple, bathrooms_tuple) = tuple(pretty.split(" | "))
-            (location_type, neighborhood, city) = tuple(location.split(", "))
+            pretty_segments = pretty.split(" | ")
+            if len(pretty_segments) == 5:
+                (location, price_tuple, area_tuple, rooms_tuple, bathrooms_tuple) = tuple(
+                    pretty.split(" | ")
+                )
+            else:
+                (location, price_tuple, area_tuple, bathrooms_tuple) = tuple(pretty.split(" | "))
+                rooms_tuple = None
+
+            location_segments = location.split(", ")
+            if len(location_segments) == 2:
+                (location_type, city) = tuple(location_segments)
+                neighborhood = None
+            else:
+                (location_type, neighborhood, city) = tuple(location_segments)
 
             property_type = (
                 location_type.replace("en Venta", "")
                 .replace("Comercial", "")
                 .replace("y Arriendo", "")
+                .replace("en Arriendo", "")
                 .strip()
                 .lower()
             )
@@ -68,15 +82,17 @@ async def get_city_results_of_current_page(page: Page) -> list[PropertyResult]:
             elif "Venta" in location_type:
                 modality = "venta"
 
+            area = area_tuple.split(": ")[1]
             property_result: PropertyResult = {
                 "type": property_type,
                 "modality": modality,
-                "neighborhood": neighborhood.lower(),
+                "neighborhood": neighborhood.lower() if neighborhood is not None else None,
                 "city": city.lower(),
-                # goes in COP
+                # goes in COP, so we remove the $
                 "price": price_tuple.split(": ")[1].replace("$", "").replace(".", ""),
-                # goes in m²
-                "area": area_tuple.split(": ")[1].replace(" m²", ""),
+                # goes in m², but we need to get rid of it
+                "area": area[:-2].strip(),
+                "rooms": rooms_tuple.split(": ")[1] if rooms_tuple is not None else 0,
                 "bathrooms": bathrooms_tuple.split(": ")[1],
             }
 
